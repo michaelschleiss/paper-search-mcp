@@ -50,6 +50,38 @@ class GoogleScholarSearcher(PaperSource):
                 return int(word)
         return None
 
+    def _extract_cluster_id(self, item) -> Optional[str]:
+        """Extract Google Scholar cluster ID from result item"""
+        import re
+        # Look for cluster/cites ID in the links (gs_fl div contains "Cited by", "All versions", etc.)
+        links_div = item.find('div', class_='gs_fl')
+        if links_div:
+            for a in links_div.find_all('a', href=True):
+                href = a['href']
+                # Match cluster=ID or cites=ID
+                match = re.search(r'(?:cluster|cites)=(\d+)', href)
+                if match:
+                    return match.group(1)
+
+        # Also check data-cid attribute on the result container
+        if item.get('data-cid'):
+            return item['data-cid']
+
+        return None
+
+    def _extract_citations(self, item) -> int:
+        """Extract citation count from result item"""
+        import re
+        links_div = item.find('div', class_='gs_fl')
+        if links_div:
+            for a in links_div.find_all('a'):
+                text = a.get_text()
+                if 'Cited by' in text:
+                    match = re.search(r'Cited by (\d+)', text)
+                    if match:
+                        return int(match.group(1))
+        return 0
+
     def _parse_paper(self, item) -> Optional[Paper]:
         """Parse single paper entry from HTML"""
         try:
@@ -66,14 +98,23 @@ class GoogleScholarSearcher(PaperSource):
             link = title_elem.find('a', href=True)
             url = link['href'] if link else ''
 
+            # Extract cluster ID (Google Scholar's unique paper identifier)
+            cluster_id = self._extract_cluster_id(item)
+
+            # Fallback to URL hash if no cluster ID found
+            paper_id = cluster_id if cluster_id else f"gs_{abs(hash(url))}"
+
             # Process author info
             info_text = info_elem.get_text()
             authors = [a.strip() for a in info_text.split('-')[0].split(',')]
             year = self._extract_year(info_text)
 
+            # Extract citation count
+            citations = self._extract_citations(item)
+
             # Create paper object
             return Paper(
-                paper_id=f"gs_{hash(url)}",
+                paper_id=paper_id,
                 title=title,
                 authors=authors,
                 abstract=abstract_elem.get_text() if abstract_elem else "",
@@ -85,7 +126,7 @@ class GoogleScholarSearcher(PaperSource):
                 categories=[],
                 keywords=[],
                 doi="",
-                citations=0
+                citations=citations
             )
         except Exception as e:
             logger.warning(f"Failed to parse paper: {e}")
