@@ -167,154 +167,61 @@ async def search_iacr(
         return [paper.to_dict(abstract_limit=abstract_limit) for paper in papers] if papers else []
 
 
+# Unified download/read tools
+SEARCHERS = {
+    'arxiv': arxiv_searcher,
+    'pubmed': pubmed_searcher,
+    'biorxiv': biorxiv_searcher,
+    'medrxiv': medrxiv_searcher,
+    'iacr': iacr_searcher,
+    'semantic': semantic_searcher,
+    'crossref': crossref_searcher,
+    'openalex': openalex_searcher,
+}
+
+
 @mcp.tool()
-async def download_arxiv(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of an arXiv paper.
+async def download_paper(paper_id: str, source: str, save_path: str = "./downloads") -> str:
+    """Download PDF of a paper from any supported source.
 
     Args:
-        paper_id: arXiv paper ID (e.g., '2106.12345').
+        paper_id: Paper identifier (format depends on source).
+        source: Source platform (arxiv, pubmed, biorxiv, medrxiv, iacr, semantic, crossref, openalex).
         save_path: Directory to save the PDF (default: './downloads').
     Returns:
-        Path to the downloaded PDF file.
+        Path to the downloaded PDF file, or error message.
     """
-    async with httpx.AsyncClient() as client:
-        return arxiv_searcher.download_pdf(paper_id, save_path)
-
-
-@mcp.tool()
-async def download_pubmed(paper_id: str, save_path: str = "./downloads") -> str:
-    """Attempt to download PDF of a PubMed paper.
-
-    Args:
-        paper_id: PubMed ID (PMID).
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        str: Message indicating that direct PDF download is not supported.
-    """
+    searcher = SEARCHERS.get(source.lower())
+    if not searcher:
+        return f"Unknown source: {source}. Supported: {', '.join(SEARCHERS.keys())}"
     try:
-        return pubmed_searcher.download_pdf(paper_id, save_path)
+        return searcher.download_pdf(paper_id, save_path)
     except NotImplementedError as e:
         return str(e)
+    except Exception as e:
+        return f"Error downloading paper: {e}"
 
 
 @mcp.tool()
-async def download_biorxiv(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of a bioRxiv paper.
+async def read_paper(paper_id: str, source: str, save_path: str = "./downloads") -> str:
+    """Read and extract text content from a paper PDF.
 
     Args:
-        paper_id: bioRxiv DOI.
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        Path to the downloaded PDF file.
-    """
-    return biorxiv_searcher.download_pdf(paper_id, save_path)
-
-
-@mcp.tool()
-async def download_medrxiv(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of a medRxiv paper.
-
-    Args:
-        paper_id: medRxiv DOI.
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        Path to the downloaded PDF file.
-    """
-    return medrxiv_searcher.download_pdf(paper_id, save_path)
-
-
-@mcp.tool()
-async def download_iacr(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of an IACR ePrint paper.
-
-    Args:
-        paper_id: IACR paper ID (e.g., '2009/101').
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        Path to the downloaded PDF file.
-    """
-    return iacr_searcher.download_pdf(paper_id, save_path)
-
-
-@mcp.tool()
-async def read_arxiv_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from an arXiv paper PDF.
-
-    Args:
-        paper_id: arXiv paper ID (e.g., '2106.12345').
+        paper_id: Paper identifier (format depends on source).
+        source: Source platform (arxiv, pubmed, biorxiv, medrxiv, iacr, semantic, crossref, openalex).
         save_path: Directory where the PDF is/will be saved (default: './downloads').
     Returns:
-        str: The extracted text content of the paper.
+        str: The extracted text content of the paper, or error message.
     """
+    searcher = SEARCHERS.get(source.lower())
+    if not searcher:
+        return f"Unknown source: {source}. Supported: {', '.join(SEARCHERS.keys())}"
     try:
-        return arxiv_searcher.read_paper(paper_id, save_path)
+        return searcher.read_paper(paper_id, save_path)
+    except NotImplementedError as e:
+        return str(e)
     except Exception as e:
-        print(f"Error reading paper {paper_id}: {e}")
-        return ""
-
-
-@mcp.tool()
-async def read_pubmed_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from a PubMed paper.
-
-    Args:
-        paper_id: PubMed ID (PMID).
-        save_path: Directory where the PDF would be saved (unused).
-    Returns:
-        str: Message indicating that direct paper reading is not supported.
-    """
-    return pubmed_searcher.read_paper(paper_id, save_path)
-
-
-@mcp.tool()
-async def read_biorxiv_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from a bioRxiv paper PDF.
-
-    Args:
-        paper_id: bioRxiv DOI.
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: The extracted text content of the paper.
-    """
-    try:
-        return biorxiv_searcher.read_paper(paper_id, save_path)
-    except Exception as e:
-        print(f"Error reading paper {paper_id}: {e}")
-        return ""
-
-
-@mcp.tool()
-async def read_medrxiv_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from a medRxiv paper PDF.
-
-    Args:
-        paper_id: medRxiv DOI.
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: The extracted text content of the paper.
-    """
-    try:
-        return medrxiv_searcher.read_paper(paper_id, save_path)
-    except Exception as e:
-        print(f"Error reading paper {paper_id}: {e}")
-        return ""
-
-
-@mcp.tool()
-async def read_iacr_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from an IACR ePrint paper PDF.
-
-    Args:
-        paper_id: IACR paper ID (e.g., '2009/101').
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: The extracted text content of the paper.
-    """
-    try:
-        return iacr_searcher.read_paper(paper_id, save_path)
-    except Exception as e:
-        print(f"Error reading paper {paper_id}: {e}")
-        return ""
+        return f"Error reading paper: {e}"
 
 
 @mcp.tool()
@@ -339,52 +246,6 @@ async def search_semantic(
         date_from=date_from, date_to=date_to
     )
     return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
-
-
-@mcp.tool()
-async def download_semantic(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of a Semantic Scholar paper.    
-
-    Args:
-        paper_id: Semantic Scholar paper ID, Paper identifier in one of the following formats:
-            - Semantic Scholar ID (e.g., "649def34f8be52c8b66281af98ae884c09aef38b")
-            - DOI:<doi> (e.g., "DOI:10.18653/v1/N18-3011")
-            - ARXIV:<id> (e.g., "ARXIV:2106.15928")
-            - MAG:<id> (e.g., "MAG:112218234")
-            - ACL:<id> (e.g., "ACL:W12-3903")
-            - PMID:<id> (e.g., "PMID:19872477")
-            - PMCID:<id> (e.g., "PMCID:2323736")
-            - URL:<url> (e.g., "URL:https://arxiv.org/abs/2106.15928v1")
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        Path to the downloaded PDF file.
-    """ 
-    return semantic_searcher.download_pdf(paper_id, save_path)
-
-
-@mcp.tool()
-async def read_semantic_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from a Semantic Scholar paper. 
-
-    Args:
-        paper_id: Semantic Scholar paper ID, Paper identifier in one of the following formats:
-            - Semantic Scholar ID (e.g., "649def34f8be52c8b66281af98ae884c09aef38b")
-            - DOI:<doi> (e.g., "DOI:10.18653/v1/N18-3011")
-            - ARXIV:<id> (e.g., "ARXIV:2106.15928")
-            - MAG:<id> (e.g., "MAG:112218234")
-            - ACL:<id> (e.g., "ACL:W12-3903")
-            - PMID:<id> (e.g., "PMID:19872477")
-            - PMCID:<id> (e.g., "PMCID:2323736")
-            - URL:<url> (e.g., "URL:https://arxiv.org/abs/2106.15928v1")
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: The extracted text content of the paper.
-    """
-    try:
-        return semantic_searcher.read_paper(paper_id, save_path)
-    except Exception as e:
-        print(f"Error reading paper {paper_id}: {e}")
-        return ""
 
 
 @mcp.tool()
@@ -434,43 +295,6 @@ async def get_crossref_paper_by_doi(doi: str, abstract_limit: int = 200) -> Dict
 
 
 @mcp.tool()
-async def download_crossref(paper_id: str, save_path: str = "./downloads") -> str:
-    """Attempt to download PDF of a CrossRef paper.
-
-    Args:
-        paper_id: CrossRef DOI (e.g., '10.1038/nature12373').
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        str: Message indicating that direct PDF download is not supported.
-        
-    Note:
-        CrossRef is a citation database and doesn't provide direct PDF downloads.
-        Use the DOI to access the paper through the publisher's website.
-    """
-    try:
-        return crossref_searcher.download_pdf(paper_id, save_path)
-    except NotImplementedError as e:
-        return str(e)
-
-
-@mcp.tool()
-async def read_crossref_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Attempt to read and extract text content from a CrossRef paper.
-
-    Args:
-        paper_id: CrossRef DOI (e.g., '10.1038/nature12373').
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: Message indicating that direct paper reading is not supported.
-
-    Note:
-        CrossRef is a citation database and doesn't provide direct paper content.
-        Use the DOI to access the paper through the publisher's website.
-    """
-    return crossref_searcher.read_paper(paper_id, save_path)
-
-
-@mcp.tool()
 async def search_openalex(
     query: str, max_results: int = 10, abstract_limit: int = 200,
     date_from: Optional[str] = None, date_to: Optional[str] = None
@@ -505,45 +329,6 @@ async def get_openalex_work_by_id(openalex_id: str, abstract_limit: int = 200) -
     """
     paper = openalex_searcher.get_work_by_id(openalex_id)
     return paper.to_dict(abstract_limit=abstract_limit) if paper else {}
-
-
-@mcp.tool()
-async def download_openalex(paper_id: str, save_path: str = "./downloads") -> str:
-    """Download PDF of an OpenAlex paper (open access only).
-
-    Args:
-        paper_id: OpenAlex work ID (e.g., 'W2741809807').
-        save_path: Directory to save the PDF (default: './downloads').
-    Returns:
-        Path to the downloaded PDF file.
-
-    Note:
-        Only works for open access papers. If the paper is not open access,
-        an error message will be returned.
-    """
-    try:
-        return openalex_searcher.download_pdf(paper_id, save_path)
-    except NotImplementedError as e:
-        return str(e)
-
-
-@mcp.tool()
-async def read_openalex_paper(paper_id: str, save_path: str = "./downloads") -> str:
-    """Read and extract text content from an OpenAlex paper (open access only).
-
-    Args:
-        paper_id: OpenAlex work ID (e.g., 'W2741809807').
-        save_path: Directory where the PDF is/will be saved (default: './downloads').
-    Returns:
-        str: The extracted text content of the paper.
-
-    Note:
-        Only works for open access papers with available PDFs.
-    """
-    try:
-        return openalex_searcher.read_paper(paper_id, save_path)
-    except Exception as e:
-        return f"Error reading paper {paper_id}: {e}"
 
 
 @mcp.tool()
