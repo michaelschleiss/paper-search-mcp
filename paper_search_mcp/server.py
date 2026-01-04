@@ -64,18 +64,23 @@ async def search_arxiv(
 
 
 @mcp.tool()
-async def search_pubmed(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
+async def search_pubmed(
+    query: str, max_results: int = 10, abstract_limit: int = 200,
+    date_from: Optional[str] = None, date_to: Optional[str] = None
+) -> List[Dict]:
     """Search academic papers from PubMed.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+        date_from: Start date YYYY-MM-DD (e.g., '2024-01-01').
+        date_to: End date YYYY-MM-DD (e.g., '2024-12-31').
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(pubmed_searcher, query, max_results, abstract_limit=abstract_limit)
-    return papers if papers else []
+    papers = pubmed_searcher.search(query, max_results, date_from=date_from, date_to=date_to)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
 
 
 @mcp.tool()

@@ -22,13 +22,31 @@ class PubMedSearcher(PaperSource):
     SEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     FETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
-    def search(self, query: str, max_results: int = 10) -> List[Paper]:
+    def search(self, query: str, max_results: int = 10,
+               date_from: str = None, date_to: str = None) -> List[Paper]:
+        """Search PubMed papers.
+
+        Args:
+            query: Search query string
+            max_results: Maximum number of results
+            date_from: Start date in YYYY-MM-DD format (optional)
+            date_to: End date in YYYY-MM-DD format (optional)
+        """
         search_params = {
             'db': 'pubmed',
             'term': query,
             'retmax': max_results,
             'retmode': 'xml'
         }
+
+        # Add date filtering if specified
+        # PubMed uses YYYY/MM/DD format
+        if date_from or date_to:
+            search_params['datetype'] = 'pdat'  # publication date
+            if date_from:
+                search_params['mindate'] = date_from.replace('-', '/')
+            if date_to:
+                search_params['maxdate'] = date_to.replace('-', '/')
         search_response = requests.get(self.SEARCH_URL, params=search_params)
         search_root = ET.fromstring(search_response.content)
         ids = [id.text for id in search_root.findall('.//Id')]
