@@ -296,6 +296,7 @@ class OpenAlexSearcher:
             params = {
                 'filter': f'openalex:{filter_str}',
                 'per_page': max_results,
+                'sort': 'cited_by_count:desc',
                 'mailto': self.USER_EMAIL,
                 'select': 'id,title,authorships,abstract_inverted_index,doi,publication_date,open_access,primary_location,cited_by_count,topics'
             }
@@ -332,6 +333,7 @@ class OpenAlexSearcher:
             params = {
                 'filter': f'cites:{paper_id}',
                 'per_page': min(max_results, 200),
+                'sort': 'cited_by_count:desc',
                 'mailto': self.USER_EMAIL,
                 'select': 'id,title,authorships,abstract_inverted_index,doi,publication_date,open_access,primary_location,cited_by_count,topics'
             }
