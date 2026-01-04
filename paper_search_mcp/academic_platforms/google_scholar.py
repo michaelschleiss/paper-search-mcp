@@ -104,6 +104,8 @@ class GoogleScholarSearcher(PaperSource):
             # Fallback to URL hash if no cluster ID found
             paper_id = cluster_id if cluster_id else f"gs_{abs(hash(url))}"
 
+            # Note: DOI not available in GS search results (would require extra requests)
+
             # Process author info
             info_text = info_elem.get_text()
             authors = [a.strip() for a in info_text.split('-')[0].split(',')]
@@ -125,7 +127,7 @@ class GoogleScholarSearcher(PaperSource):
                 source="google_scholar",
                 categories=[],
                 keywords=[],
-                doi="",
+                doi="",  # Not available in GS search results
                 citations=citations
             )
         except Exception as e:
