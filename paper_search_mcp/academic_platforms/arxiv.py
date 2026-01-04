@@ -81,6 +81,7 @@ class ArxivSearcher(PaperSource):
     def download_pdf(self, paper_id: str, save_path: str) -> str:
         pdf_url = f"https://arxiv.org/pdf/{paper_id}.pdf"
         response = requests.get(pdf_url)
+        os.makedirs(save_path, exist_ok=True)
         output_file = f"{save_path}/{paper_id}.pdf"
         with open(output_file, 'wb') as f:
             f.write(response.content)

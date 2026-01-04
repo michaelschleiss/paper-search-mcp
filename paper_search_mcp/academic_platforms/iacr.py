@@ -268,6 +268,7 @@ class IACRSearcher(PaperSource):
             response = self.session.get(pdf_url)
 
             if response.status_code == 200:
+                os.makedirs(save_path, exist_ok=True)
                 filename = f"{save_path}/iacr_{paper_id.replace('/', '_')}.pdf"
                 with open(filename, "wb") as f:
                     f.write(response.content)
