@@ -60,6 +60,7 @@ class Paper:
             'abstract': abstract,
             'date': self.published_date.strftime('%Y-%m-%d') if self.published_date else None,
             'doi': self.doi or None,
+            'pdf': self.pdf_url or None,  # Include when available (e.g., open access)
             'categories': self.categories if self.categories else None,
             'citations': self.citations if self.citations else None,
         }

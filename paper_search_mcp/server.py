@@ -10,6 +10,7 @@ from .academic_platforms.google_scholar import GoogleScholarSearcher
 from .academic_platforms.iacr import IACRSearcher
 from .academic_platforms.semantic import SemanticSearcher
 from .academic_platforms.crossref import CrossRefSearcher
+from .academic_platforms.openalex import OpenAlexSearcher
 
 # from .academic_platforms.hub import SciHubSearcher
 from .paper import Paper
@@ -26,6 +27,7 @@ google_scholar_searcher = GoogleScholarSearcher()
 iacr_searcher = IACRSearcher()
 semantic_searcher = SemanticSearcher()
 crossref_searcher = CrossRefSearcher()
+openalex_searcher = OpenAlexSearcher()
 # scihub_searcher = SciHubSearcher()
 
 
@@ -460,12 +462,88 @@ async def read_crossref_paper(paper_id: str, save_path: str = "./downloads") -> 
         save_path: Directory where the PDF is/will be saved (default: './downloads').
     Returns:
         str: Message indicating that direct paper reading is not supported.
-        
+
     Note:
         CrossRef is a citation database and doesn't provide direct paper content.
         Use the DOI to access the paper through the publisher's website.
     """
     return crossref_searcher.read_paper(paper_id, save_path)
+
+
+@mcp.tool()
+async def search_openalex(
+    query: str, max_results: int = 10, abstract_limit: int = 200,
+    date_from: Optional[str] = None, date_to: Optional[str] = None
+) -> List[Dict]:
+    """Search academic papers from OpenAlex - comprehensive index of 240M+ scholarly works.
+
+    OpenAlex aggregates data from CrossRef, PubMed, arXiv, institutional repositories,
+    and more. Results include PDF URLs for open access papers.
+
+    Args:
+        query: Search query string (e.g., 'machine learning', 'climate change').
+        max_results: Maximum number of papers to return (default: 10, max: 200).
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+        date_from: Start date YYYY-MM-DD (e.g., '2024-01-01').
+        date_to: End date YYYY-MM-DD (e.g., '2024-12-31').
+    Returns:
+        List of paper metadata in dictionary format. Open access papers include 'pdf' field.
+    """
+    papers = openalex_searcher.search(query, max_results, date_from=date_from, date_to=date_to)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
+
+
+@mcp.tool()
+async def get_openalex_work_by_id(openalex_id: str, abstract_limit: int = 200) -> Dict:
+    """Get a specific work from OpenAlex by its ID.
+
+    Args:
+        openalex_id: OpenAlex work ID (e.g., 'W2741809807').
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+    Returns:
+        Paper metadata in dictionary format, or empty dict if not found.
+    """
+    paper = openalex_searcher.get_work_by_id(openalex_id)
+    return paper.to_dict(abstract_limit=abstract_limit) if paper else {}
+
+
+@mcp.tool()
+async def download_openalex(paper_id: str, save_path: str = "./downloads") -> str:
+    """Download PDF of an OpenAlex paper (open access only).
+
+    Args:
+        paper_id: OpenAlex work ID (e.g., 'W2741809807').
+        save_path: Directory to save the PDF (default: './downloads').
+    Returns:
+        Path to the downloaded PDF file.
+
+    Note:
+        Only works for open access papers. If the paper is not open access,
+        an error message will be returned.
+    """
+    try:
+        return openalex_searcher.download_pdf(paper_id, save_path)
+    except NotImplementedError as e:
+        return str(e)
+
+
+@mcp.tool()
+async def read_openalex_paper(paper_id: str, save_path: str = "./downloads") -> str:
+    """Read and extract text content from an OpenAlex paper (open access only).
+
+    Args:
+        paper_id: OpenAlex work ID (e.g., 'W2741809807').
+        save_path: Directory where the PDF is/will be saved (default: './downloads').
+    Returns:
+        str: The extracted text content of the paper.
+
+    Note:
+        Only works for open access papers with available PDFs.
+    """
+    try:
+        return openalex_searcher.read_paper(paper_id, save_path)
+    except Exception as e:
+        return f"Error reading paper {paper_id}: {e}"
 
 
 if __name__ == "__main__":

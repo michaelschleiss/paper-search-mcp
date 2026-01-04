@@ -33,7 +33,7 @@ A Model Context Protocol (MCP) server for searching and downloading academic pap
 
 ## Features
 
-- **Multi-Source Support**: Search and download papers from arXiv, PubMed, bioRxiv, medRxiv, Google Scholar, IACR ePrint Archive, Semantic Scholar, and CrossRef.
+- **Multi-Source Support**: Search and download papers from arXiv, PubMed, bioRxiv, medRxiv, Google Scholar, IACR ePrint Archive, Semantic Scholar, CrossRef, and OpenAlex.
 - **Date Filtering**: All sources support `date_from` and `date_to` parameters (YYYY-MM-DD format) to filter papers by publication date.
 - **Token-Optimized Output**: Configurable `abstract_limit` parameter to control abstract length (default: 200 chars, use -1 for full, 0 to omit).
 - **Standardized Output**: Papers are returned in a consistent, compact dictionary format via the `Paper` class.
@@ -174,6 +174,7 @@ We welcome contributions! Here's how to get started:
 - [√] IACR ePrint Archive
 - [√] Semantic Scholar
 - [√] CrossRef
+- [√] OpenAlex
 - [ ] PubMed Central (PMC)
 - [ ] Science Direct
 - [ ] Springer Link
