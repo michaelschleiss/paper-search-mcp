@@ -338,6 +338,8 @@ class SemanticSearcher(PaperSource):
         Returns:
             str: Extracted text from the PDF or error message
         """
+        from ..pdf_utils import extract_text_from_pdf
+
         try:
             # First get paper details to get the PDF URL
             paper = self.get_paper_details(paper_id)
@@ -358,21 +360,8 @@ class SemanticSearcher(PaperSource):
             with open(pdf_path, "wb") as f:
                 f.write(pdf_response.content)
 
-            # Extract text using PyPDF2
-            reader = PdfReader(pdf_path)
-            text = ""
-
-            for page_num, page in enumerate(reader.pages):
-                try:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += f"\n--- Page {page_num + 1} ---\n"
-                        text += page_text + "\n"
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to extract text from page {page_num + 1}: {e}"
-                    )
-                    continue
+            # Extract text using pdftotext (with PyPDF2 fallback)
+            text = extract_text_from_pdf(pdf_path)
 
             if not text.strip():
                 return (

@@ -139,24 +139,18 @@ class MedRxivSearcher(PaperSource):
     def read_paper(self, paper_id: str, save_path: str = "./downloads") -> str:
         """
         Read a paper and convert it to text format.
-        
+
         Args:
             paper_id: medRxiv DOI
             save_path: Directory where the PDF is/will be saved
-            
+
         Returns:
             str: The extracted text content of the paper
         """
+        from ..pdf_utils import extract_text_from_pdf
+
         pdf_path = f"{save_path}/{paper_id.replace('/', '_')}.pdf"
         if not os.path.exists(pdf_path):
             pdf_path = self.download_pdf(paper_id, save_path)
-        
-        try:
-            reader = PdfReader(pdf_path)
-            text = ""
-            for page in reader.pages:
-                text += page.extract_text() + "\n"
-            return text.strip()
-        except Exception as e:
-            print(f"Error reading PDF for paper {paper_id}: {e}")
-            return ""
+
+        return extract_text_from_pdf(pdf_path)
