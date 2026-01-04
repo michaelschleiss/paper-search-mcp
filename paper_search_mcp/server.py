@@ -31,8 +31,7 @@ crossref_searcher = CrossRefSearcher()
 
 # Asynchronous helper to adapt synchronous searchers
 async def async_search(
-    searcher, query: str, max_results: int,
-    compact: bool = True, abstract_limit: int = 200, **kwargs
+    searcher, query: str, max_results: int, abstract_limit: int = 200, **kwargs
 ) -> List[Dict]:
     async with httpx.AsyncClient() as client:
         # Assuming searchers use requests internally; we'll call synchronously for now
@@ -40,124 +39,100 @@ async def async_search(
             papers = searcher.search(query, year=kwargs['year'], max_results=max_results)
         else:
             papers = searcher.search(query, max_results=max_results)
-        return [paper.to_dict(compact=compact, abstract_limit=abstract_limit) for paper in papers]
+        return [paper.to_dict(abstract_limit=abstract_limit) for paper in papers]
 
 
 # Tool definitions
 @mcp.tool()
-async def search_arxiv(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_arxiv(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from arXiv.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(arxiv_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit)
+    papers = await async_search(arxiv_searcher, query, max_results, abstract_limit=abstract_limit)
     return papers if papers else []
 
 
 @mcp.tool()
-async def search_pubmed(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_pubmed(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from PubMed.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(pubmed_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit)
+    papers = await async_search(pubmed_searcher, query, max_results, abstract_limit=abstract_limit)
     return papers if papers else []
 
 
 @mcp.tool()
-async def search_biorxiv(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_biorxiv(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from bioRxiv.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(biorxiv_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit)
+    papers = await async_search(biorxiv_searcher, query, max_results, abstract_limit=abstract_limit)
     return papers if papers else []
 
 
 @mcp.tool()
-async def search_medrxiv(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_medrxiv(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from medRxiv.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(medrxiv_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit)
+    papers = await async_search(medrxiv_searcher, query, max_results, abstract_limit=abstract_limit)
     return papers if papers else []
 
 
 @mcp.tool()
-async def search_google_scholar(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_google_scholar(query: str, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from Google Scholar.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
-    papers = await async_search(google_scholar_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit)
+    papers = await async_search(google_scholar_searcher, query, max_results, abstract_limit=abstract_limit)
     return papers if papers else []
 
 
 @mcp.tool()
-async def search_iacr(
-    query: str, max_results: int = 10, fetch_details: bool = True,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_iacr(query: str, max_results: int = 10, fetch_details: bool = True, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from IACR ePrint Archive.
 
     Args:
         query: Search query string (e.g., 'cryptography', 'secret sharing').
         max_results: Maximum number of papers to return (default: 10).
         fetch_details: Whether to fetch detailed information for each paper (default: True).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
     """
     async with httpx.AsyncClient() as client:
         papers = iacr_searcher.search(query, max_results, fetch_details)
-        return [paper.to_dict(compact=compact, abstract_limit=abstract_limit) for paper in papers] if papers else []
+        return [paper.to_dict(abstract_limit=abstract_limit) for paper in papers] if papers else []
 
 
 @mcp.tool()
@@ -311,17 +286,13 @@ async def read_iacr_paper(paper_id: str, save_path: str = "./downloads") -> str:
 
 
 @mcp.tool()
-async def search_semantic(
-    query: str, year: Optional[str] = None, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200
-) -> List[Dict]:
+async def search_semantic(query: str, year: Optional[str] = None, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
     """Search academic papers from Semantic Scholar.
 
     Args:
         query: Search query string (e.g., 'machine learning').
         year: Optional year filter (e.g., '2019', '2016-2020', '2010-', '-2015').
         max_results: Maximum number of papers to return (default: 10).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         List of paper metadata in dictionary format.
@@ -329,7 +300,7 @@ async def search_semantic(
     kwargs = {}
     if year is not None:
         kwargs['year'] = year
-    papers = await async_search(semantic_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit, **kwargs)
+    papers = await async_search(semantic_searcher, query, max_results, abstract_limit=abstract_limit, **kwargs)
     return papers if papers else []
 
 
@@ -381,19 +352,14 @@ async def read_semantic_paper(paper_id: str, save_path: str = "./downloads") -> 
 
 @mcp.tool()
 async def search_crossref(
-    query: str, max_results: int = 10,
-    compact: bool = True, abstract_limit: int = 200,
+    query: str, max_results: int = 10, abstract_limit: int = 200,
     filter: Optional[str] = None, sort: Optional[str] = None, order: Optional[str] = None
 ) -> List[Dict]:
     """Search academic papers from CrossRef database.
 
-    CrossRef is a scholarly infrastructure organization that provides
-    persistent identifiers (DOIs) for scholarly content and metadata.
-
     Args:
         query: Search query string (e.g., 'machine learning', 'climate change').
         max_results: Maximum number of papers to return (default: 10, max: 1000).
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
         filter: CrossRef filter string (e.g., 'has-full-text:true,from-pub-date:2020').
         sort: Sort field ('relevance', 'published', 'updated', 'deposited', etc.).
@@ -408,26 +374,23 @@ async def search_crossref(
         kwargs['sort'] = sort
     if order is not None:
         kwargs['order'] = order
-    papers = await async_search(crossref_searcher, query, max_results, compact=compact, abstract_limit=abstract_limit, **kwargs)
+    papers = await async_search(crossref_searcher, query, max_results, abstract_limit=abstract_limit, **kwargs)
     return papers if papers else []
 
 
 @mcp.tool()
-async def get_crossref_paper_by_doi(
-    doi: str, compact: bool = True, abstract_limit: int = 200
-) -> Dict:
+async def get_crossref_paper_by_doi(doi: str, abstract_limit: int = 200) -> Dict:
     """Get a specific paper from CrossRef by its DOI.
 
     Args:
         doi: Digital Object Identifier (e.g., '10.1038/nature12373').
-        compact: Omit empty fields to reduce tokens (default: True).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
     Returns:
         Paper metadata in dictionary format, or empty dict if not found.
     """
     async with httpx.AsyncClient() as client:
         paper = crossref_searcher.get_paper_by_doi(doi)
-        return paper.to_dict(compact=compact, abstract_limit=abstract_limit) if paper else {}
+        return paper.to_dict(abstract_limit=abstract_limit) if paper else {}
 
 
 @mcp.tool()
