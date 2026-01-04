@@ -262,6 +262,96 @@ class OpenAlexSearcher:
         except Exception as e:
             return f"Could not read paper: {e}"
 
+    def get_references(self, paper_id: str, max_results: int = 25) -> List[Paper]:
+        """Get papers that this work cites (outgoing references).
+
+        Args:
+            paper_id: OpenAlex work ID (e.g., 'W2741809807')
+            max_results: Maximum number of references to return (default: 25)
+
+        Returns:
+            List of Paper objects for referenced works
+        """
+        try:
+            # Ensure proper ID format
+            if not paper_id.startswith('W'):
+                paper_id = f'W{paper_id}'
+
+            # Get the work to extract referenced_works
+            url = f'{self.BASE_URL}/works/{paper_id}'
+            params = {'mailto': self.USER_EMAIL}
+            response = self.session.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            referenced_ids = data.get('referenced_works', [])
+            if not referenced_ids:
+                return []
+
+            # Extract IDs and fetch details
+            ref_ids = [r.replace('https://openalex.org/', '') for r in referenced_ids[:max_results]]
+
+            # Batch fetch referenced works
+            filter_str = '|'.join(ref_ids)
+            params = {
+                'filter': f'openalex:{filter_str}',
+                'per_page': max_results,
+                'mailto': self.USER_EMAIL,
+                'select': 'id,title,authorships,abstract_inverted_index,doi,publication_date,open_access,primary_location,cited_by_count,topics'
+            }
+            response = self.session.get(f'{self.BASE_URL}/works', params=params)
+            response.raise_for_status()
+
+            papers = []
+            for item in response.json().get('results', []):
+                paper = self._parse_work(item)
+                if paper:
+                    papers.append(paper)
+
+            return papers
+
+        except Exception as e:
+            logger.error(f"Error fetching references for {paper_id}: {e}")
+            return []
+
+    def get_citing_papers(self, paper_id: str, max_results: int = 25) -> List[Paper]:
+        """Get papers that cite this work (incoming citations).
+
+        Args:
+            paper_id: OpenAlex work ID (e.g., 'W2741809807')
+            max_results: Maximum number of citing papers to return (default: 25)
+
+        Returns:
+            List of Paper objects for citing works
+        """
+        try:
+            # Ensure proper ID format
+            if not paper_id.startswith('W'):
+                paper_id = f'W{paper_id}'
+
+            params = {
+                'filter': f'cites:{paper_id}',
+                'per_page': min(max_results, 200),
+                'mailto': self.USER_EMAIL,
+                'select': 'id,title,authorships,abstract_inverted_index,doi,publication_date,open_access,primary_location,cited_by_count,topics'
+            }
+
+            response = self.session.get(f'{self.BASE_URL}/works', params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            papers = []
+            for item in data.get('results', []):
+                paper = self._parse_work(item)
+                if paper:
+                    papers.append(paper)
+
+            return papers[:max_results]
+
+        except Exception as e:
+            logger.error(f"Error fetching citing papers for {paper_id}: {e}")
+            return []
+
 
 if __name__ == "__main__":
     # Test OpenAlex searcher

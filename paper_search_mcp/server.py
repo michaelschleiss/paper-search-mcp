@@ -546,5 +546,39 @@ async def read_openalex_paper(paper_id: str, save_path: str = "./downloads") -> 
         return f"Error reading paper {paper_id}: {e}"
 
 
+@mcp.tool()
+async def get_openalex_references(
+    paper_id: str, max_results: int = 25, abstract_limit: int = 200
+) -> List[Dict]:
+    """Get papers that a work cites (outgoing references/bibliography).
+
+    Args:
+        paper_id: OpenAlex work ID (e.g., 'W2741809807').
+        max_results: Maximum number of references to return (default: 25).
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+    Returns:
+        List of paper metadata for works cited by this paper.
+    """
+    papers = openalex_searcher.get_references(paper_id, max_results)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
+
+
+@mcp.tool()
+async def get_openalex_citations(
+    paper_id: str, max_results: int = 25, abstract_limit: int = 200
+) -> List[Dict]:
+    """Get papers that cite a work (incoming citations).
+
+    Args:
+        paper_id: OpenAlex work ID (e.g., 'W2741809807').
+        max_results: Maximum number of citing papers to return (default: 25).
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+    Returns:
+        List of paper metadata for works that cite this paper.
+    """
+    papers = openalex_searcher.get_citing_papers(paper_id, max_results)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
