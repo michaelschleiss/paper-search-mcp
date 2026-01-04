@@ -35,15 +35,18 @@ class CrossRefSearcher(PaperSource):
             'Accept': 'application/json'
         })
     
-    def search(self, query: str, max_results: int = 10, **kwargs) -> List[Paper]:
+    def search(self, query: str, max_results: int = 10,
+               date_from: str = None, date_to: str = None, **kwargs) -> List[Paper]:
         """
         Search CrossRef database for papers.
-        
+
         Args:
             query: Search query string
             max_results: Maximum number of results to return (default: 10)
+            date_from: Start date in YYYY-MM-DD format (optional)
+            date_to: End date in YYYY-MM-DD format (optional)
             **kwargs: Additional parameters like filters, sort, etc.
-            
+
         Returns:
             List of Paper objects
         """
@@ -54,10 +57,22 @@ class CrossRefSearcher(PaperSource):
                 'sort': 'relevance',
                 'order': 'desc'
             }
-            
+
+            # Build date filter
+            date_filters = []
+            if date_from:
+                date_filters.append(f'from-pub-date:{date_from}')
+            if date_to:
+                date_filters.append(f'until-pub-date:{date_to}')
+
             # Add any additional filters from kwargs
             if 'filter' in kwargs:
-                params['filter'] = kwargs['filter']
+                if date_filters:
+                    params['filter'] = kwargs['filter'] + ',' + ','.join(date_filters)
+                else:
+                    params['filter'] = kwargs['filter']
+            elif date_filters:
+                params['filter'] = ','.join(date_filters)
             if 'sort' in kwargs:
                 params['sort'] = kwargs['sort']
             if 'order' in kwargs:

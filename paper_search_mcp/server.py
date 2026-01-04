@@ -368,6 +368,7 @@ async def read_semantic_paper(paper_id: str, save_path: str = "./downloads") -> 
 @mcp.tool()
 async def search_crossref(
     query: str, max_results: int = 10, abstract_limit: int = 200,
+    date_from: Optional[str] = None, date_to: Optional[str] = None,
     filter: Optional[str] = None, sort: Optional[str] = None, order: Optional[str] = None
 ) -> List[Dict]:
     """Search academic papers from CrossRef database.
@@ -376,7 +377,9 @@ async def search_crossref(
         query: Search query string (e.g., 'machine learning', 'climate change').
         max_results: Maximum number of papers to return (default: 10, max: 1000).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
-        filter: CrossRef filter string (e.g., 'has-full-text:true,from-pub-date:2020').
+        date_from: Start date YYYY-MM-DD (e.g., '2024-01-01').
+        date_to: End date YYYY-MM-DD (e.g., '2024-12-31').
+        filter: CrossRef filter string (e.g., 'has-full-text:true').
         sort: Sort field ('relevance', 'published', 'updated', 'deposited', etc.).
         order: Sort order ('asc' or 'desc').
     Returns:
@@ -389,8 +392,8 @@ async def search_crossref(
         kwargs['sort'] = sort
     if order is not None:
         kwargs['order'] = order
-    papers = await async_search(crossref_searcher, query, max_results, abstract_limit=abstract_limit, **kwargs)
-    return papers if papers else []
+    papers = crossref_searcher.search(query, max_results, date_from=date_from, date_to=date_to, **kwargs)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
 
 
 @mcp.tool()
