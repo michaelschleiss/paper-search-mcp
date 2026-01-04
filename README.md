@@ -33,11 +33,27 @@ A Model Context Protocol (MCP) server for searching and downloading academic pap
 
 ## Features
 
-- **Multi-Source Support**: Search and download papers from arXiv, PubMed, bioRxiv, medRxiv, Google Scholar, IACR ePrint Archive, Semantic Scholar.
-- **Standardized Output**: Papers are returned in a consistent dictionary format via the `Paper` class.
+- **Multi-Source Support**: Search and download papers from arXiv, PubMed, bioRxiv, medRxiv, Google Scholar, IACR ePrint Archive, Semantic Scholar, and CrossRef.
+- **Date Filtering**: All sources support `date_from` and `date_to` parameters (YYYY-MM-DD format) to filter papers by publication date.
+- **Token-Optimized Output**: Configurable `abstract_limit` parameter to control abstract length (default: 200 chars, use -1 for full, 0 to omit).
+- **Standardized Output**: Papers are returned in a consistent, compact dictionary format via the `Paper` class.
 - **Asynchronous Tools**: Efficiently handles network requests using `httpx`.
 - **MCP Integration**: Compatible with MCP clients for LLM context enhancement.
 - **Extensible Design**: Easily add new academic platforms by extending the `academic_platforms` module.
+
+### Search Parameters
+
+All search tools support these common parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | str | required | Search query string |
+| `max_results` | int | 10 | Maximum number of papers to return |
+| `abstract_limit` | int | 200 | Max chars for abstract (0=omit, -1=full) |
+| `date_from` | str | None | Start date in YYYY-MM-DD format |
+| `date_to` | str | None | End date in YYYY-MM-DD format |
+
+> **Note**: Google Scholar only supports year-level filtering (month/day are ignored).
 
 ---
 
@@ -157,6 +173,7 @@ We welcome contributions! Here's how to get started:
 - [√] Google Scholar
 - [√] IACR ePrint Archive
 - [√] Semantic Scholar
+- [√] CrossRef
 - [ ] PubMed Central (PMC)
 - [ ] Science Direct
 - [ ] Springer Link
