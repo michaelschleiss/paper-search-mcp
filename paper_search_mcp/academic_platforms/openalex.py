@@ -174,6 +174,39 @@ class OpenAlexSearcher:
         except Exception:
             return ''
 
+    def get_work_by_doi(self, doi: str) -> Optional[Paper]:
+        """Get a specific work by DOI.
+
+        Args:
+            doi: Digital Object Identifier (e.g., '10.1038/nature12373')
+
+        Returns:
+            Paper object if found, None otherwise
+        """
+        try:
+            # Clean DOI - remove URL prefix if present
+            if doi.startswith('https://doi.org/'):
+                doi = doi[16:]
+            elif doi.startswith('http://doi.org/'):
+                doi = doi[15:]
+            elif doi.startswith('doi:'):
+                doi = doi[4:]
+
+            url = f'{self.BASE_URL}/works/https://doi.org/{doi}'
+            params = {'mailto': self.USER_EMAIL}
+
+            response = self.session.get(url, params=params)
+
+            if response.status_code == 404:
+                return None
+
+            response.raise_for_status()
+            return self._parse_work(response.json())
+
+        except Exception as e:
+            logger.error(f"Error fetching work by DOI {doi}: {e}")
+            return None
+
     def get_work_by_id(self, openalex_id: str) -> Optional[Paper]:
         """Get a specific work by OpenAlex ID.
 

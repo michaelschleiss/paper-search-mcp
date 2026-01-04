@@ -581,6 +581,29 @@ async def get_openalex_citations(
 
 
 @mcp.tool()
+async def get_paper_by_doi(doi: str, abstract_limit: int = 200) -> Dict:
+    """Get a paper by its DOI from OpenAlex (with CrossRef fallback).
+
+    Args:
+        doi: Digital Object Identifier (e.g., '10.1038/nature12373').
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+    Returns:
+        Paper metadata in dictionary format, or empty dict if not found.
+    """
+    # Try OpenAlex first (has citations, categories)
+    paper = openalex_searcher.get_work_by_doi(doi)
+    if paper:
+        return paper.to_dict(abstract_limit=abstract_limit)
+
+    # Fallback to CrossRef
+    paper = crossref_searcher.get_paper_by_doi(doi)
+    if paper:
+        return paper.to_dict(abstract_limit=abstract_limit)
+
+    return {}
+
+
+@mcp.tool()
 async def search_authors(name: str, max_results: int = 10) -> List[Dict]:
     """Search for authors by name using OpenAlex.
 
