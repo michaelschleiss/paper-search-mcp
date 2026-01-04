@@ -203,7 +203,8 @@ class SemanticSearcher(PaperSource):
         
         return {"error": "max_retries_exceeded", "message": "Maximum retry attempts exceeded"}
 
-    def search(self, query: str, year: Optional[str] = None, max_results: int = 10) -> List[Paper]:
+    def search(self, query: str, year: Optional[str] = None, max_results: int = 10,
+               date_from: Optional[str] = None, date_to: Optional[str] = None) -> List[Paper]:
         """
         Search Semantic Scholar
 
@@ -214,6 +215,8 @@ class SemanticSearcher(PaperSource):
             - Year range: "2016-2020"
             - Since year: "2010-"
             - Until year: "-2015"
+            date_from: Start date in YYYY-MM-DD format (optional, overrides year)
+            date_to: End date in YYYY-MM-DD format (optional, overrides year)
             max_results: Maximum number of results to return
 
         Returns:
@@ -229,7 +232,12 @@ class SemanticSearcher(PaperSource):
                 "limit": max_results,
                 "fields": ",".join(fields),
             }
-            if year:
+            # Date filtering: date_from/date_to take precedence over year
+            if date_from or date_to:
+                start = date_from if date_from else ""
+                end = date_to if date_to else ""
+                params["publicationDateOrYear"] = f"{start}:{end}"
+            elif year:
                 params["year"] = year
             # Make request
             response = self.request_api("paper/search", params)

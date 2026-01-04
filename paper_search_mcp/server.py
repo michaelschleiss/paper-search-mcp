@@ -291,22 +291,27 @@ async def read_iacr_paper(paper_id: str, save_path: str = "./downloads") -> str:
 
 
 @mcp.tool()
-async def search_semantic(query: str, year: Optional[str] = None, max_results: int = 10, abstract_limit: int = 200) -> List[Dict]:
+async def search_semantic(
+    query: str, max_results: int = 10, abstract_limit: int = 200,
+    year: Optional[str] = None, date_from: Optional[str] = None, date_to: Optional[str] = None
+) -> List[Dict]:
     """Search academic papers from Semantic Scholar.
 
     Args:
         query: Search query string (e.g., 'machine learning').
-        year: Optional year filter (e.g., '2019', '2016-2020', '2010-', '-2015').
         max_results: Maximum number of papers to return (default: 10).
         abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+        year: Year filter (e.g., '2019', '2016-2020', '2010-', '-2015').
+        date_from: Start date YYYY-MM-DD (e.g., '2024-01-01'). Overrides year.
+        date_to: End date YYYY-MM-DD (e.g., '2024-12-31'). Overrides year.
     Returns:
         List of paper metadata in dictionary format.
     """
-    kwargs = {}
-    if year is not None:
-        kwargs['year'] = year
-    papers = await async_search(semantic_searcher, query, max_results, abstract_limit=abstract_limit, **kwargs)
-    return papers if papers else []
+    papers = semantic_searcher.search(
+        query, year=year, max_results=max_results,
+        date_from=date_from, date_to=date_to
+    )
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
 
 
 @mcp.tool()
