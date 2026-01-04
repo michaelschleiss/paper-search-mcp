@@ -150,8 +150,41 @@ class IACRSearcher(PaperSource):
             logger.warning(f"Failed to parse IACR paper: {e}")
             return None
 
+    def _parse_date_filter(self, date_str: str) -> Optional[datetime]:
+        """Parse a date filter string in YYYY-MM-DD format"""
+        if not date_str:
+            return None
+        try:
+            return datetime.strptime(date_str.strip(), "%Y-%m-%d")
+        except ValueError:
+            logger.warning(f"Invalid date filter format: {date_str}, expected YYYY-MM-DD")
+            return None
+
+    def _is_within_date_range(
+        self, paper: Paper, date_from: Optional[datetime], date_to: Optional[datetime]
+    ) -> bool:
+        """Check if paper's published_date is within the specified date range"""
+        if not paper.published_date:
+            return False
+
+        # Use date only for comparison (ignore time component)
+        paper_date = paper.published_date.date() if hasattr(paper.published_date, 'date') else paper.published_date
+
+        if date_from:
+            from_date = date_from.date() if hasattr(date_from, 'date') else date_from
+            if paper_date < from_date:
+                return False
+
+        if date_to:
+            to_date = date_to.date() if hasattr(date_to, 'date') else date_to
+            if paper_date > to_date:
+                return False
+
+        return True
+
     def search(
-        self, query: str, max_results: int = 10, fetch_details: bool = True
+        self, query: str, max_results: int = 10, fetch_details: bool = True,
+        date_from: str = None, date_to: str = None
     ) -> List[Paper]:
         """
         Search IACR ePrint Archive
@@ -160,11 +193,18 @@ class IACRSearcher(PaperSource):
             query: Search query string
             max_results: Maximum number of results to return
             fetch_details: Whether to fetch detailed information for each paper (slower but more complete)
+            date_from: Start date in YYYY-MM-DD format (optional)
+            date_to: End date in YYYY-MM-DD format (optional)
 
         Returns:
             List[Paper]: List of paper objects
         """
         papers = []
+
+        # Parse date filters
+        date_from_dt = self._parse_date_filter(date_from)
+        date_to_dt = self._parse_date_filter(date_to)
+        has_date_filter = date_from_dt is not None or date_to_dt is not None
 
         try:
             # Construct search parameters
@@ -188,14 +228,23 @@ class IACRSearcher(PaperSource):
                 return papers
 
             # Process each result
+            # When date filtering is active, we may need to process more results
+            # to find enough papers within the date range
             for i, item in enumerate(results):
                 if len(papers) >= max_results:
                     break
 
-                logger.info(f"Processing paper {i+1}/{min(len(results), max_results)}")
+                logger.info(f"Processing paper {i+1}/{len(results)}")
                 paper = self._parse_paper(item, fetch_details=fetch_details)
                 if paper:
-                    papers.append(paper)
+                    # Apply date filter if specified
+                    if has_date_filter:
+                        if self._is_within_date_range(paper, date_from_dt, date_to_dt):
+                            papers.append(paper)
+                        else:
+                            logger.debug(f"Paper {paper.paper_id} excluded by date filter")
+                    else:
+                        papers.append(paper)
 
         except Exception as e:
             logger.error(f"IACR search error: {e}")

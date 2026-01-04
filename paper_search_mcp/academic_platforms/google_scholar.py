@@ -91,9 +91,15 @@ class GoogleScholarSearcher(PaperSource):
             logger.warning(f"Failed to parse paper: {e}")
             return None
 
-    def search(self, query: str, max_results: int = 10) -> List[Paper]:
+    def search(self, query: str, max_results: int = 10, date_from: str = None, date_to: str = None) -> List[Paper]:
         """
         Search Google Scholar with custom parameters
+
+        Args:
+            query: Search query string
+            max_results: Maximum number of papers to return
+            date_from: Start date in YYYY-MM-DD format (only year is used)
+            date_to: End date in YYYY-MM-DD format (only year is used)
         """
         papers = []
         start = 0
@@ -108,6 +114,21 @@ class GoogleScholarSearcher(PaperSource):
                     'hl': 'en',
                     'as_sdt': '0,5'  # Include articles and citations
                 }
+
+                # Add year filters if provided (extract year from YYYY-MM-DD format)
+                if date_from:
+                    try:
+                        year_from = int(date_from.split('-')[0])
+                        params['as_ylo'] = year_from
+                    except (ValueError, IndexError):
+                        logger.warning(f"Invalid date_from format: {date_from}")
+
+                if date_to:
+                    try:
+                        year_to = int(date_to.split('-')[0])
+                        params['as_yhi'] = year_to
+                    except (ValueError, IndexError):
+                        logger.warning(f"Invalid date_to format: {date_to}")
 
                 # Make request with random delay
                 time.sleep(random.uniform(1.0, 3.0))

@@ -26,21 +26,28 @@ class MedRxivSearcher(PaperSource):
         self.timeout = 30
         self.max_retries = 3
 
-    def search(self, query: str, max_results: int = 10, days: int = 30) -> List[Paper]:
+    def search(self, query: str, max_results: int = 10, days: int = 30,
+               date_from: str = None, date_to: str = None) -> List[Paper]:
         """
-        Search for papers on medRxiv by category within the last N days.
+        Search for papers on medRxiv by category within a date range.
 
         Args:
             query: Category name to search for (e.g., "cardiovascular medicine").
             max_results: Maximum number of papers to return.
-            days: Number of days to look back for papers.
+            days: Number of days to look back for papers (used if date_from/date_to not specified).
+            date_from: Start date in YYYY-MM-DD format (optional, overrides days).
+            date_to: End date in YYYY-MM-DD format (optional, defaults to today).
 
         Returns:
             List of Paper objects matching the category within the specified date range.
         """
-        # Calculate date range: last N days
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        # Calculate date range: use explicit dates if provided, otherwise fall back to days
+        if date_from or date_to:
+            end_date = date_to if date_to else datetime.now().strftime('%Y-%m-%d')
+            start_date = date_from if date_from else '2000-01-01'
+        else:
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
         
         # Format category: lowercase and replace spaces with underscores
         category = query.lower().replace(' ', '_')
