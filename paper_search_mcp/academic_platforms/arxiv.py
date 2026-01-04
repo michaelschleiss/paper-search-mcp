@@ -22,9 +22,31 @@ class ArxivSearcher(PaperSource):
     """Searcher for arXiv papers"""
     BASE_URL = "http://export.arxiv.org/api/query"
 
-    def search(self, query: str, max_results: int = 10) -> List[Paper]:
+    def search(self, query: str, max_results: int = 10,
+               date_from: str = None, date_to: str = None) -> List[Paper]:
+        """Search arXiv papers.
+
+        Args:
+            query: Search query string
+            max_results: Maximum number of results
+            date_from: Start date in YYYY-MM-DD format (optional)
+            date_to: End date in YYYY-MM-DD format (optional)
+        """
+        # Build query with date filter if specified
+        # Format: submittedDate:[YYYYMMDDHHMM TO YYYYMMDDHHMM]
+        # Note: Must use field prefix (all:, ti:, abs:) with date filter
+        search_query = query
+        if date_from or date_to:
+            start = date_from.replace('-', '') + '0000' if date_from else '190001010000'
+            end = date_to.replace('-', '') + '2359' if date_to else '209912312359'
+            # Wrap query in all: if not already using a field prefix
+            if not any(query.startswith(p) for p in ['ti:', 'abs:', 'au:', 'cat:', 'all:']):
+                search_query = f'all:"{query}" AND submittedDate:[{start} TO {end}]'
+            else:
+                search_query = f'{query} AND submittedDate:[{start} TO {end}]'
+
         params = {
-            'search_query': query,
+            'search_query': search_query,
             'max_results': max_results,
             'sortBy': 'submittedDate',
             'sortOrder': 'descending'
