@@ -54,6 +54,7 @@ class Paper:
 
         result = {
             'id': self.paper_id,
+            'source': self.source or None,
             'title': self.title,
             'authors': '; '.join(self.authors) if self.authors else None,
             'abstract': abstract,
