@@ -580,5 +580,38 @@ async def get_openalex_citations(
     return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
 
 
+@mcp.tool()
+async def search_authors(name: str, max_results: int = 10) -> List[Dict]:
+    """Search for authors by name using OpenAlex.
+
+    Args:
+        name: Author name to search for (e.g., 'Yann LeCun', 'Hinton').
+        max_results: Maximum number of authors to return (default: 10).
+    Returns:
+        List of author metadata with id, name, works_count, citations, affiliations.
+    """
+    return openalex_searcher.search_authors(name, max_results)
+
+
+@mcp.tool()
+async def get_author_papers(
+    author_id: str, max_results: int = 25, abstract_limit: int = 200,
+    date_from: Optional[str] = None, date_to: Optional[str] = None
+) -> List[Dict]:
+    """Get papers by an author, sorted by citation count.
+
+    Args:
+        author_id: OpenAlex author ID (e.g., 'A5015666723').
+        max_results: Maximum number of papers to return (default: 25).
+        abstract_limit: Max chars for abstract (0=omit, -1=full, default: 200).
+        date_from: Start date YYYY-MM-DD (optional).
+        date_to: End date YYYY-MM-DD (optional).
+    Returns:
+        List of paper metadata sorted by citations (highest first).
+    """
+    papers = openalex_searcher.get_author_papers(author_id, max_results, date_from, date_to)
+    return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

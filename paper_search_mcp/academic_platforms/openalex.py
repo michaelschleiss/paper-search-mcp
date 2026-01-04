@@ -355,6 +355,105 @@ class OpenAlexSearcher:
             return []
 
 
+    def search_authors(self, name: str, max_results: int = 10) -> List[Dict]:
+        """Search for authors by name.
+
+        Args:
+            name: Author name to search for
+            max_results: Maximum number of authors to return (default: 10)
+
+        Returns:
+            List of author metadata dictionaries
+        """
+        try:
+            params = {
+                'search': name,
+                'per_page': min(max_results, 200),
+                'mailto': self.USER_EMAIL
+            }
+
+            response = self.session.get(f'{self.BASE_URL}/authors', params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            authors = []
+            for a in data.get('results', []):
+                author_id = a.get('id', '').replace('https://openalex.org/', '')
+                affiliations = [aff.get('display_name') for aff in a.get('affiliations', []) if aff.get('display_name')]
+
+                authors.append({
+                    'id': author_id,
+                    'name': a.get('display_name', ''),
+                    'works_count': a.get('works_count', 0),
+                    'citations': a.get('cited_by_count', 0),
+                    'affiliations': affiliations[:3] if affiliations else None,
+                    'orcid': a.get('orcid', '').replace('https://orcid.org/', '') if a.get('orcid') else None
+                })
+
+            # Filter out None values
+            for author in authors:
+                for key in list(author.keys()):
+                    if author[key] is None:
+                        del author[key]
+
+            return authors[:max_results]
+
+        except Exception as e:
+            logger.error(f"Error searching authors: {e}")
+            return []
+
+    def get_author_papers(
+        self, author_id: str, max_results: int = 25,
+        date_from: Optional[str] = None, date_to: Optional[str] = None
+    ) -> List[Paper]:
+        """Get papers by an author.
+
+        Args:
+            author_id: OpenAlex author ID (e.g., 'A5015666723')
+            max_results: Maximum number of papers to return (default: 25)
+            date_from: Start date in YYYY-MM-DD format (optional)
+            date_to: End date in YYYY-MM-DD format (optional)
+
+        Returns:
+            List of Paper objects sorted by citation count
+        """
+        try:
+            # Ensure proper ID format
+            if not author_id.startswith('A'):
+                author_id = f'A{author_id}'
+
+            # Build filter
+            filters = [f'author.id:{author_id}']
+            if date_from:
+                filters.append(f'from_publication_date:{date_from}')
+            if date_to:
+                filters.append(f'to_publication_date:{date_to}')
+
+            params = {
+                'filter': ','.join(filters),
+                'per_page': min(max_results, 200),
+                'sort': 'cited_by_count:desc',
+                'mailto': self.USER_EMAIL,
+                'select': 'id,title,authorships,abstract_inverted_index,doi,publication_date,open_access,primary_location,cited_by_count,topics'
+            }
+
+            response = self.session.get(f'{self.BASE_URL}/works', params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            papers = []
+            for item in data.get('results', []):
+                paper = self._parse_work(item)
+                if paper:
+                    papers.append(paper)
+
+            return papers[:max_results]
+
+        except Exception as e:
+            logger.error(f"Error fetching papers for author {author_id}: {e}")
+            return []
+
+
 if __name__ == "__main__":
     # Test OpenAlex searcher
     searcher = OpenAlexSearcher()
