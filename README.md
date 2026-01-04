@@ -35,6 +35,9 @@ A Model Context Protocol (MCP) server for searching and downloading academic pap
 
 - **Multi-Source Support**: Search and download papers from arXiv, PubMed, bioRxiv, medRxiv, Google Scholar, IACR ePrint Archive, Semantic Scholar, CrossRef, and OpenAlex.
 - **Date Filtering**: All sources support `date_from` and `date_to` parameters (YYYY-MM-DD format) to filter papers by publication date.
+- **Citation Counts**: OpenAlex, Semantic Scholar, CrossRef, and Google Scholar include citation counts in search results.
+- **Citation Graph**: OpenAlex tools to explore references (papers a work cites) and citations (papers citing a work), sorted by impact.
+- **Open Access PDFs**: OpenAlex includes PDF URLs for open access papers.
 - **Token-Optimized Output**: Configurable `abstract_limit` parameter to control abstract length (default: 200 chars, use -1 for full, 0 to omit).
 - **Standardized Output**: Papers are returned in a consistent, compact dictionary format via the `Paper` class.
 - **Asynchronous Tools**: Efficiently handles network requests using `httpx`.
