@@ -56,12 +56,12 @@ class Paper:
             'id': self.paper_id,
             'title': self.title,
             'authors': '; '.join(self.authors) if self.authors else None,
-            'abs': abstract,
+            'abstract': abstract,
             'date': self.published_date.strftime('%Y-%m-%d') if self.published_date else None,
             'pdf': self.pdf_url or self.url or None,
             'doi': self.doi or None,
-            'cats': '; '.join(self.categories) if self.categories else None,
-            'cites': self.citations if self.citations else None,
+            'category': '; '.join(self.categories) if self.categories else None,
+            'citations': self.citations if self.citations else None,
         }
 
         # Remove None/empty values
