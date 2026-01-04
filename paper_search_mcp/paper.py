@@ -38,22 +38,41 @@ class Paper:
         if self.extra is None:
             self.extra = {}
 
-    def to_dict(self) -> Dict:
-        """Convert paper to dictionary format for serialization"""
-        return {
+    def to_dict(self, compact: bool = True, abstract_limit: int = 200) -> Dict:
+        """Convert paper to dictionary format for serialization.
+
+        Args:
+            compact: If True, omit empty/null fields to reduce token usage (default: True)
+            abstract_limit: Max characters for abstract. 0 = omit, -1 = full (default: 200)
+        """
+        # Process abstract based on limit
+        if abstract_limit == 0:
+            abstract = None
+        elif abstract_limit > 0 and self.abstract and len(self.abstract) > abstract_limit:
+            abstract = self.abstract[:abstract_limit] + '...'
+        else:
+            abstract = self.abstract
+
+        result = {
             'paper_id': self.paper_id,
             'title': self.title,
-            'authors': '; '.join(self.authors) if self.authors else '',
-            'abstract': self.abstract,
-            'doi': self.doi,
-            'published_date': self.published_date.isoformat() if self.published_date else '',
-            'pdf_url': self.pdf_url,
-            'url': self.url,
+            'authors': '; '.join(self.authors) if self.authors else None,
+            'abstract': abstract,
+            'doi': self.doi or None,
+            'published_date': self.published_date.isoformat() if self.published_date else None,
+            'pdf_url': self.pdf_url or None,
+            'url': self.url or None,
             'source': self.source,
-            'updated_date': self.updated_date.isoformat() if self.updated_date else '',
-            'categories': '; '.join(self.categories) if self.categories else '',
-            'keywords': '; '.join(self.keywords) if self.keywords else '',
-            'citations': self.citations,
-            'references': '; '.join(self.references) if self.references else '',
-            'extra': str(self.extra) if self.extra else ''
+            'updated_date': self.updated_date.isoformat() if self.updated_date else None,
+            'categories': '; '.join(self.categories) if self.categories else None,
+            'keywords': '; '.join(self.keywords) if self.keywords else None,
+            'citations': self.citations if self.citations else None,
+            'references': '; '.join(self.references) if self.references else None,
+            'extra': str(self.extra) if self.extra else None
         }
+
+        if compact:
+            # Remove None/empty values to save tokens
+            result = {k: v for k, v in result.items() if v is not None and v != ''}
+
+        return result
