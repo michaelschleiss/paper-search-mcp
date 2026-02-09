@@ -421,5 +421,9 @@ async def get_author_papers(
     return [p.to_dict(abstract_limit=abstract_limit) for p in papers] if papers else []
 
 
-if __name__ == "__main__":
+def main():
     mcp.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()
