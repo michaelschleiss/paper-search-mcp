@@ -1,0 +1,7 @@
+{
+  "name": "paper-search-mcp",
+  "version": "0.2.0",
+  "description": "Search and download academic papers from arXiv, PubMed, bioRxiv, Semantic Scholar, OpenAlex, and more",
+  "repository": "https://github.com/michaelschleiss/paper-search-mcp",
+  "license": "MIT"
+}
