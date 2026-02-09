@@ -1,0 +1,12 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "paper-search-mcp",
+  "plugins": [
+    {
+      "name": "paper-search-mcp",
+      "description": "Search and download academic papers from arXiv, PubMed, bioRxiv, Semantic Scholar, OpenAlex, and more",
+      "category": "research",
+      "source": "."
+    }
+  ]
+}
